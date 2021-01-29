@@ -1,30 +1,49 @@
 import React from 'react';
 import Head from 'next/head';
-import { GetServerSideProps } from 'next';
+import Link from 'next/link';
+import { GetStaticProps } from 'next';
+import pokemonData, { PokemonBasicInfo } from '../src/pokemonData';
 
 interface IndexProps {
-  title: string;
+  pokemons: PokemonBasicInfo[];
 }
 
-const index: React.FC<IndexProps> = ({title}) => (
+const index: React.FC<IndexProps> = ({pokemons}) => (
   <React.Fragment>
     <Head>
-      <title>{title}</title>
+      <title>Pokemons</title>
       <link rel="stylesheet" type="text/css" href="/styles.css" />
     </Head>
-    <h1>{title}</h1>
+    <h1>Pokemons</h1>
+    <ul>
+      {
+        pokemons.map(pokemon => (
+          <li key={pokemon.id}>
+            <p>
+              {pokemon.name}
+              {pokemon.types.map(type=> (
+                <React.Fragment key={type}>
+                  {' '}
+                  <Link href={`/type/${type}`}>                  
+                    <a>                    
+                      {type}
+                    </a>
+                  </Link>
+                </React.Fragment>
+              ))}
+            </p>
+          </li>
+        ))
+      }      
+    </ul>
   </React.Fragment>
 );
 
-/**
- * This is getServerSideProps to verify that the ENV is working,
- * nota that this functionality (because of the static nature of the data) 
- * will fit better in the getStaticProps paradigm
- */
-export const getServerSideProps: GetServerSideProps<IndexProps>  = async () => {
+export const getStaticProps: GetStaticProps<IndexProps>  = async () => {
+  // SOLO EN SERVER
   return {
     props: {
-      title: `Hello ${process.env.PROJECT_NAME}!`,
+      pokemons: pokemonData
     },
   }
 }
