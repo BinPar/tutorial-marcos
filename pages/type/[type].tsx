@@ -2,15 +2,15 @@ import React from 'react';
 import Head from 'next/head';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
-import { stdout } from 'process';
 import pokemonData, { PokemonBasicInfo } from '../../src/pokemonData';
 
 interface TypeProps {
   typeName: string;
+  time: string;
   pokemons: PokemonBasicInfo[];
 }
 
-const type: React.FC<TypeProps> = ({ typeName, pokemons }) => (
+const type: React.FC<TypeProps> = ({ typeName, pokemons, time }) => (
   <React.Fragment>
     <Head>
       <title>
@@ -24,6 +24,8 @@ const type: React.FC<TypeProps> = ({ typeName, pokemons }) => (
       Pokemons by type
       {' '}
       {typeName}
+      {' at '}
+      {time}
     </h1>
     <Link href="/">
       <a>Home</a>
@@ -67,7 +69,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps: GetStaticProps<TypeProps> = async ({ params }) => {
-  const typeName = params.type.toString();
+  const typeName = params.type.toString();  
   const listOfPokemons = pokemonData.filter((pokemon) =>
     pokemon.types.includes(typeName),
   );
@@ -75,6 +77,7 @@ export const getStaticProps: GetStaticProps<TypeProps> = async ({ params }) => {
     notFound: listOfPokemons.length === 0,
     props: {
       typeName,
+      time: (new Date()).toISOString(),
       pokemons: listOfPokemons,      
     },
     revalidate: 10, 
