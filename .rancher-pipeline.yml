@@ -1,0 +1,75 @@
+stages:
+  - name: Prerequisites
+    steps:
+      - runScriptConfig:
+          image: badouralix/rancher-cli
+          shellScript: rancher projects
+        envFrom:
+          - sourceName: rancher-cli-access
+            sourceKey: RANCHER_ACCESS_KEY
+          - sourceName: rancher-cli-access
+            sourceKey: RANCHER_SECRET_KEY
+          - sourceName: rancher-cli-access
+            sourceKey: RANCHER_URL
+    when:
+      branch:
+        include:
+          - test
+  - name: Compile And Test
+    steps:
+      - publishImageConfig:
+          dockerfilePath: ./Dockerfile
+          buildContext: .
+          tag: ${CICD_GIT_REPO_NAME}/next:${CICD_EXECUTION_SEQUENCE}
+    when:
+      branch:
+        exclude:
+          - test
+  - name: Deploy
+    steps:
+      - applyYamlConfig:
+          path: ./k8s/deployment-dev.yaml
+        when:
+          branch:
+            include:
+              - develop
+      - applyYamlConfig:
+          path: ./k8s/deployment-pre.yaml
+        when:
+          branch:
+            include:
+              - release/*
+      - applyYamlConfig:
+          path: ./k8s/deployment-prod.yaml
+        when:
+          branch:
+            include:
+              - master
+  - name: Configuration
+    steps:
+      - applyYamlConfig:
+          path: ./configMaps/config-dev.yaml
+        when:
+          branch:
+            include:
+              - develop
+      - applyYamlConfig:
+          path: ./configMaps/config-pre.yaml
+        when:
+          branch:
+            include:
+              - release/*
+      - applyYamlConfig:
+          path: ./configMaps/config-prod.yaml
+        when:
+          branch:
+            include:
+              - master
+timeout: 20
+branch:
+  include:
+    - master
+    - develop
+    - release/*
+    - test
+notification: {}
