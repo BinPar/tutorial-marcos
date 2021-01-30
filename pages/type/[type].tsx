@@ -3,49 +3,51 @@ import Head from 'next/head';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import pokemonData, { PokemonBasicInfo } from '../../src/pokemonData';
+import wait from '../../src/wait';
 
 interface TypeProps {
   typeName: string;
-  time: string;
+  start: string;
+  end: string;
   pokemons: PokemonBasicInfo[];
 }
 
-const type: React.FC<TypeProps> = ({ typeName, pokemons, time }) => (
+const type: React.FC<TypeProps> = ({ typeName, pokemons, start, end }) => (
   <React.Fragment>
     <Head>
-      <title>
-        Pokemons by type
-        {' '}
-        {typeName}
-      </title>
+      <title>{`Pokemons by type ${typeName}`}</title>
       <link rel="stylesheet" type="text/css" href="/styles.css" />
     </Head>
-    <h1>
-      Pokemons by type
-      {' '}
-      {typeName}
-      {' at '}
-      {time}
-    </h1>
+    <h1>{`Pokemons by type ${typeName}`}</h1>
+    <p>
+      <strong>Start:</strong>
+      {start}
+    </p>
+    <p>
+      <strong>End:</strong>
+      {end}
+    </p>
     <Link href="/">
       <a>Home</a>
     </Link>
     <ul>
-      {pokemons && pokemons.map((pokemon) => (
-        <li key={pokemon.id}>
-          <p>
-            {pokemon.name}
-            {pokemon.types && pokemon.types.map((pokemonType) => (
-              <React.Fragment key={pokemonType}>
-                {' '}
-                <Link href={`/type/${pokemonType}`}>
-                  <a>{pokemonType}</a>
-                </Link>
-              </React.Fragment>
-            ))}
-          </p>
-        </li>
-      ))}
+      {pokemons &&
+        pokemons.map((pokemon) => (
+          <li key={pokemon.id}>
+            <p>
+              {pokemon.name}
+              {pokemon.types &&
+                pokemon.types.map((pokemonType) => (
+                  <React.Fragment key={pokemonType}>
+                    {' '}
+                    <Link href={`/type/${pokemonType}`}>
+                      <a>{pokemonType}</a>
+                    </Link>
+                  </React.Fragment>
+                ))}
+            </p>
+          </li>
+        ))}
     </ul>
   </React.Fragment>
 );
@@ -57,11 +59,12 @@ export const getStaticPaths: GetStaticPaths = async () => {
       if (!newList.includes(typeName)) {
         newList.push(typeName);
       }
-    });
+    });    
     return newList;
-  }, new Array<string>());
+  }, new Array<string>());  
+  const removed = allTypes.pop();    
   // eslint-disable-next-line no-console
-  console.log(`*******${allTypes.pop()}`);
+  console.log(`Removed from the list...${removed}`);
   return {
     paths: allTypes.map((typeName) => ({ params: { type: typeName } })),
     fallback: true,
@@ -69,18 +72,26 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps: GetStaticProps<TypeProps> = async ({ params }) => {
-  const typeName = params.type.toString();  
+  const start = new Date().toLocaleTimeString();
+  const typeName = params.type.toString();
   const listOfPokemons = pokemonData.filter((pokemon) =>
     pokemon.types.includes(typeName),
   );
+  // eslint-disable-next-line no-console
+  console.log(`Start ${typeName}`);
+  await wait(10);
+  // eslint-disable-next-line no-console
+  console.log(`End ${typeName}`);
+  const end = new Date().toLocaleTimeString();
   return {
     notFound: listOfPokemons.length === 0,
     props: {
       typeName,
-      time: (new Date()).toISOString(),
-      pokemons: listOfPokemons,      
+      start,
+      end,
+      pokemons: listOfPokemons,
     },
-    revalidate: 10, 
+    revalidate: typeName === 'water' ? 60 : false,
   };
 };
 
