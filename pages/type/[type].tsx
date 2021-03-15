@@ -3,7 +3,6 @@ import Head from 'next/head';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import pokemonData, { PokemonBasicInfo } from '../../src/pokemonData';
-import wait from '../../src/wait';
 
 interface TypeProps {
   typeName: string;
@@ -53,7 +52,7 @@ const type: React.FC<TypeProps> = ({ typeName, pokemons, start, end }) => (
 );
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const allTypes = pokemonData.reduce((list: string[], pokemon) => {
+  let allTypes = pokemonData.reduce((list: string[], pokemon) => {
     const newList = [...list];
     pokemon.types.forEach((typeName) => {
       if (!newList.includes(typeName)) {
@@ -63,6 +62,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     return newList;
   }, new Array<string>());  
   const removed = allTypes.pop();    
+  allTypes = [];
   // eslint-disable-next-line no-console
   console.log(`Removed from the list...${removed}`);
   return {
@@ -71,28 +71,46 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+let cnt = 0;
+
 export const getStaticProps: GetStaticProps<TypeProps> = async ({ params }) => {
   const start = new Date().toLocaleTimeString();
   const typeName = params.type.toString();
-  const listOfPokemons = pokemonData.filter((pokemon) =>
-    pokemon.types.includes(typeName),
-  );
-  // eslint-disable-next-line no-console
-  console.log(`Start ${typeName}`);
-  await wait(10);
-  // eslint-disable-next-line no-console
-  console.log(`End ${typeName}`);
-  const end = new Date().toLocaleTimeString();
-  return {
-    notFound: listOfPokemons.length === 0,
-    props: {
-      typeName,
-      start,
-      end,
-      pokemons: listOfPokemons,
-    },
-    revalidate: typeName === 'water' ? 60 : false,
-  };
+  try  {    
+    const listOfPokemons = pokemonData.filter((pokemon) =>
+      pokemon.types.includes(typeName),
+    );
+    const firstPokemon = listOfPokemons[0].name[7].toLowerCase();
+    // eslint-disable-next-line no-console
+    console.log(firstPokemon);
+    // eslint-disable-next-line no-console
+    console.log(`Start ${typeName}`);
+    // await wait(10);
+    // eslint-disable-next-line no-console
+    console.log(`End ${typeName}`);
+    const end = new Date().toLocaleTimeString();
+    return {
+      notFound: listOfPokemons.length === 0,
+      props: {
+        typeName,
+        start,
+        end,
+        pokemons: listOfPokemons,
+      },
+      revalidate: typeName === 'water' ? 60 : false,
+    };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log(`Error en página: ${typeName}`);
+    return {
+      redirect: {
+        destination: `/mal?error=${encodeURIComponent(error)}&cnt=${cnt++}`,
+        permanent: false,        
+      },
+      revalidate: 1,
+    };
+  }
+  
 };
 
 export default type;
